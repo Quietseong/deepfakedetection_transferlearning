@@ -1,0 +1,139 @@
+# ========================================
+# FSFM 전이학습 설정 파일
+# ========================================
+
+# 프로젝트 기본 설정
+project:
+  name: "transfer_learning"
+  seed: 42
+  device: "cuda"  # cuda or cpu
+
+# 데이터 경로 설정
+data:
+  train_path: "/workspace/transfer_learning_fsfm/data/train"
+  val_path: "/workspace/transfer_learning_fsfm/data/val"
+  inference_path: "/workspace/transfer_learning_fsfm/data/inf"  # 추론용 경로
+  
+  # 데이터 전처리
+  image_size: 224
+  num_frames: 10  # 동영상에서 추출할 프레임 수
+  
+  # 정규화 파라미터 (FSFM 사전학습 데이터셋 기준)
+  mean: [0.5482207536697388, 0.42340534925460815, 0.3654651641845703]
+  std: [0.2789176106452942, 0.2438540756702423, 0.23493893444538116]
+
+# 모델 설정
+model:
+  type: "vit_base_patch16"  # vit_small_patch16, vit_base_patch16, vit_large_patch16
+  num_classes: 2  # Real(0) vs Fake(1)
+  drop_path_rate: 0.1
+  global_pool: ""  # 빈 문자열로 설정 (FSFM 사전학습 모델과 동일)
+  
+  # 사전학습 체크포인트
+  pretrained_checkpoint: "/workspace/transfer_learning_fsfm/src/models/fsfm/checkpoint/vit_base_patch16/checkpoint-min_val_loss.pth"
+  norm_file: "/workspace/transfer_learning_fsfm/src/models/fsfm/checkpoint/vit_base_patch16/pretrain_ds_mean_std.txt"
+
+# 전이학습 전략 설정
+transfer_learning:
+  strategy: "fine_tuning"  # feature_extractor, fine_tuning, peft_lora
+  
+  # Feature Extractor 설정
+  feature_extractor:
+    freeze_backbone: true  # 백본 전체 고정
+  
+  # Fine-tuning 설정
+  fine_tuning:
+    freeze_layers: []  # 고정할 레이어 리스트 (비어있으면 전체 미세조정)
+    # 예: ["blocks.0", "blocks.1", "blocks.2", "blocks.3"]  # 초기 4개 블록 고정
+  
+  # PEFT-LoRA 설정
+  peft_lora:
+    r: 16  # LoRA rank
+    lora_alpha: 32  # LoRA scaling factor
+    lora_dropout: 0.1
+    target_modules: ["qkv"]  # ViT의 attention QKV projection에 적용
+    bias: "none"
+    modules_to_save: ["head"]  # 분류 헤드는 학습
+
+# 학습 설정
+training:
+  epochs: 20
+  batch_size: 32
+  num_workers: 4
+  pin_memory: true
+  
+  # 옵티마이저
+  optimizer:
+    type: "adamw"  # adamw, sgd
+    lr: 1e-4  # 전이학습용 낮은 학습률
+    weight_decay: 0.05
+    betas: [0.9, 0.999]
+  
+  # 학습률 스케줄러
+  scheduler:
+    type: "cosine"  # cosine, step, plateau
+    warmup_epochs: 2
+    min_lr: 1e-6
+    
+    # StepLR 설정 (type: step)
+    step_size: 5
+    gamma: 0.1
+    
+    # ReduceLROnPlateau 설정 (type: plateau)
+    patience: 3
+    factor: 0.5
+  
+  # 손실 함수
+  loss:
+    type: "cross_entropy"  # cross_entropy, focal_loss
+    label_smoothing: 0.1
+    
+    # Focal Loss 설정
+    focal_alpha: 0.25
+    focal_gamma: 2.0
+  
+  # 데이터 증강
+  augmentation:
+    enabled: true
+    horizontal_flip: 0.5
+    vertical_flip: 0.0
+    rotation: 10  # degrees
+    color_jitter:
+      brightness: 0.2
+      contrast: 0.2
+      saturation: 0.2
+      hue: 0.1
+    random_erasing: 0.1
+  
+  # Mixed Precision Training
+  mixed_precision: true
+  
+  # 체크포인트 저장
+  save_best_only: true
+  save_every_n_epochs: 5
+  checkpoint_dir: "./checkpoints"
+  
+  # Early Stopping
+  early_stopping:
+    enabled: true
+    patience: 7
+    min_delta: 0.001
+
+# 추론 설정
+inference:
+  batch_size: 16
+  num_frames: 10
+  video_aggregation: "mean"  # mean, max, voting
+  output_path: "./submission.csv"
+
+# 로깅 설정
+logging:
+  log_dir: "./logs"
+  log_interval: 10  # 매 N 배치마다 로그 출력
+  tensorboard: true
+  wandb:
+    enabled: false
+    project: "fsfm-deepfake-detection"
+    entity: null
+
+
