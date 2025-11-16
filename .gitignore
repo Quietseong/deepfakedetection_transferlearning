@@ -31,10 +31,9 @@ env/
 *.pt
 *.ckpt
 
-# 체크포인트 (best_model.pth 제외)
+# 체크포인트
 checkpoints/*
 !checkpoints/.gitkeep
-!checkpoints/best_model.pth
 
 # 로그
 logs/
