@@ -1,6 +1,6 @@
-# FSFM 전이학습 프로젝트
+# FSFM transferlearning 프로젝트
 
-딥페이크 탐지를 위한 FSFM(Few-Shot Face Manipulation) 모델 전이학습 프로젝트입니다.
+딥페이크 탐지를 위한 FSFM(Face Security Foundation Model) 모델 transferlearning 프로젝트입니다.
 
 ## 📋 프로젝트 개요
 
