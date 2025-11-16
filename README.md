@@ -196,6 +196,14 @@ python train.py --config configs/config.yaml --strategy feature_extractor
 # Fine-tuning
 python train.py --config configs/config.yaml --strategy fine_tuning
 
+# 다양한 학습률 시도
+python train.py --config configs/config.yaml --strategy fine_tuning --lr 5e-5 --epochs 30
+python train.py --config configs/config.yaml --strategy fine_tuning --lr 1e-4 --epochs 25
+
+# 더 긴 학습
+python train.py --config configs/config.yaml --strategy fine_tuning --epochs 50
+
+
 # PEFT-LoRA
 python train.py --config configs/config.yaml --strategy peft_lora
 ```
